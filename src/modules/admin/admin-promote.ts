@@ -38,7 +38,7 @@ export async function promoteAdminUsers(
     .updateTable('user')
     .set({ role: 'admin' })
     .where('emailVerified', '=', true)
-    .where('role', 'is not', 'admin')
+    .where('role', '!=', 'admin')
     .where('email', 'in', targets as string[])
     .returning(['email'])
     .execute();
