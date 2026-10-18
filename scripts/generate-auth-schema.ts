@@ -13,6 +13,7 @@ import 'dotenv/config';
 import { resolve } from 'path';
 import { configuration } from '../src/config/configuration';
 import { buildAuth } from '../src/modules/auth/better-auth.instance';
+import type { MailService } from '../src/modules/mail/mail.service';
 import { getAuthTables } from 'better-auth';
 
 type FieldType = 'string' | 'number' | 'boolean' | 'date';
@@ -101,8 +102,15 @@ async function apply(sql: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  // CLI context: buildAuth requires a MailService dep — never called here
+  // (schema generation only reads auth.options, no mail can fire).
+  const mailStub = {
+    send: async () => false,
+    sendVerificationEmail: async () => false,
+    sendResetPassword: async () => false,
+  } as unknown as MailService;
+  const auth = buildAuth({ config: configuration(), mail: mailStub });
   const applyFlag = process.argv.includes('--apply');
-  const auth = buildAuth({ config: configuration() });
   const sql = tablesToSql(getAuthTables(auth.options) as unknown as Record<string, TableDef>);
   console.log(sql);
 
