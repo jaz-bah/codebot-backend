@@ -153,3 +153,4 @@ curl -s -X POST $BASE/api/auth/sign-in/social -H "content-type: application/json
 - `src/modules/health/` — `GET /health`
 
 Governance docs (PRD, ARCHITECTURE, ROADMAP, TASKS, LOG, MEMORY) live in `../Brain/`.
+For "how do I actually use this" — sign-ups, resets, admin workflows, troubleshooting — see `../Brain/RUNBOOK.md`.
