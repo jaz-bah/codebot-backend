@@ -5,6 +5,7 @@ import { toNodeHandler } from 'better-auth/node';
 import { AppModule } from './app.module';
 import { AUTH_INSTANCE } from './modules/auth/auth.module';
 import { AuthInstance } from './modules/auth/better-auth.instance';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 /**
  * Bootstrap the one-process server:
@@ -36,6 +37,8 @@ async function bootstrap(): Promise<void> {
   const auth = app.get<AuthInstance>(AUTH_INSTANCE);
   const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.use('/api/auth', toNodeHandler(auth));
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);

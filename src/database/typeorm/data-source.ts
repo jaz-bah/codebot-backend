@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { sslFromUrl } from '../ssl';

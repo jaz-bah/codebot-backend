@@ -2,8 +2,10 @@ import { betterAuth } from 'better-auth';
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { AppConfig } from '../../config/configuration';
 import { createKyselyPool } from '../../database/kysely/pool';
+import { getAuthKysely } from '../../database/kysely/auth-db';
 import { MailService } from '../mail/mail.service';
 import { buildSocialProviders } from './social-providers';
+import { promoteAdminUsers, shouldPromote } from '../admin/admin-promote';
 
 export interface BetterAuthDeps {
   config: AppConfig;
@@ -35,8 +37,13 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
       enabled: true,
       minPasswordLength: 8,
       requireEmailVerification: true, // FR-1: verified email before usable session
+      // FR: password reset invalidates every live session of the account
+      revokeSessionsOnPasswordReset: true,
+      onPasswordReset: async () => {
+        // hook marker: reset completed successfully (audit arrives Phase 3/final)
+      },
       sendResetPassword: async ({ user, url }) => {
-        // FR-4 — path wired here, activated & tested in Phase 3
+        // FR-4 — forget-password flow, tested in Phase 3 e2e
         await mail.sendResetPassword({ email: user.email, name: user.name }, url);
       },
     },
@@ -62,6 +69,50 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
     },
 
     socialProviders: buildSocialProviders(config.oauth),
+
+    // Rate limiting (network layer, IP-ranked) — built-in special rules in
+    // better-auth 1.7 enforce 3 req/10 s on sign-in|sign-up|change-* and
+    // 3 req/60 s on forget-password|resend paths. Always on (dev included).
+    rateLimit: {
+      enabled: true,
+      window: 10,
+      max: 100,
+    },
+
+    // US-6: promote ADMIN_EMAIL users to role=admin on login (server-side,
+    // never settable via signup/payload). Fails safe — never blocks sign-in.
+    databaseHooks: {
+      session: {
+        create: {
+          after: async (session: { userId: string }, ctx) => {
+            try {
+              if (!session?.userId || !config.adminEmails.length) return;
+              const db = getAuthKysely(config.databaseUrl);
+              const user = await db
+                .selectFrom('user')
+                .select(['id', 'email', 'emailVerified', 'role'])
+                .where('id', '=', session.userId)
+                .executeTakeFirst();
+              if (!user) return;
+              const candidate = {
+                email: String(user.email),
+                emailVerified: Boolean(user.emailVerified),
+                role: user.role == null ? null : String(user.role),
+              };
+              if (!shouldPromote(candidate, config.adminEmails)) return;
+              const promoted = await promoteAdminUsers(db, config.adminEmails);
+              ctx?.context?.logger?.info?.(
+                `admin bootstrap: promoted ${promoted.join(', ') || '(none)'}`,
+              );
+            } catch (e) {
+              ctx?.context?.logger?.error?.(
+                `admin bootstrap (session hook) failed: ${e instanceof Error ? e.message : String(e)}`,
+              );
+            }
+          },
+        },
+      },
+    },
 
     account: {
       accountLinking: {
