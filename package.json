@@ -1,0 +1,24 @@
+{
+  "name": "backend-app",
+  "version": "1.0.0",
+  "description": "Codebot SaaS backend - NestJS authentication system (BetterAuth + Neon Postgres + TypeORM)",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "db:ping": "ts-node scripts/db-ping.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d dist/database/typeorm/data-source.js",
+    "migration:gen": "typeorm-ts-node-commonjs migration:generate -d dist/database/typeorm/data-source.js"
+  },
+  "keywords": [
+    "nestjs",
+    "better-auth",
+    "typeorm",
+    "neon",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
