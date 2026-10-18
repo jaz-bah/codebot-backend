@@ -4,3 +4,4 @@ dist/
 *.log
 coverage/
 .mail-capture.jsonl
+.mail-capture.jsonl

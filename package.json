@@ -12,7 +12,8 @@
     "migration:gen": "typeorm-ts-node-commonjs migration:generate -d dist/database/typeorm/data-source.js",
     "auth:schema": "ts-node scripts/generate-auth-schema.ts --apply",
     "init:db": "npm run auth:schema",
-    "test": "jest"
+    "test": "jest",
+    "e2e": "node scripts/e2e-all.mjs"
   },
   "keywords": [
     "nestjs",

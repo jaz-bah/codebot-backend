@@ -9,13 +9,29 @@ running on Neon Postgres; domain data uses TypeORM (separate tables — PRD D1).
 ```bash
 npm install            # install deps
 cp .env.example .env   # then fill in real values
-npm run init:db        # create/patch the 4 BetterAuth tables (idempotent)
+npm run init:db        # create/patch the BetterAuth tables (idempotent)
+npm run migration:run  # apply TypeORM domain migrations (audit_log, …)
 npm run build          # tsc + copy mail templates into dist/
 npm start              # serve on $PORT (default 3000)
 npm run start:dev      # ts-node-dev hot reload
-npm test               # unit tests (jest + ts-jest)
-node scripts/e2e-phase1.mjs   # full auth-flow E2E (server must be running)
+npm test               # unit tests (19, jest + ts-jest)
 ```
+
+## Automated E2E suite
+
+Four scripted HTTP suites prove the whole contract against the real app+DB
+(server must be running; dev mail capture provides verification/reset links):
+
+```bash
+npm run e2e    # runs e2e-phase1 → phase2 → phase3 → edge (27 steps, stops on first failure)
+node scripts/e2e-phase1.mjs   # US-1 flow: signup→verify(auto-signin)→signout→signin→session→signout (9)
+node scripts/e2e-phase2.mjs   # OAuth wiring: authorize redirects + state cookie (4)
+node scripts/e2e-phase3.mjs   # reset flow + 401/403 guards + audit row + 429 (7)
+node scripts/e2e-edge.mjs     # unverified login rejected, resend, idempotent token, garbage token (7)
+```
+
+`.mail-capture.jsonl` (non-production only) records every mail send
+`{at,to,subject,url}` so scripts get verification/reset links without a mailbox.
 
 ## Auth endpoints (`/api/auth/**`)
 
@@ -83,13 +99,50 @@ ownership via `email_verified`).
 
 ## Dev helpers
 
-- **`.mail-capture.jsonl`** — in `NODE_ENV != production` every mail send is
-  appended here (to/subject/url). Lets scripted E2E pick up verification links
-  without an inbox. Never written in production; gitignored.
-- **`scripts/e2e-phase1.mjs`** — end-to-end auth flow: signup → verify
-  (auto-sign-in) → sign-out → sign-in → get-session → sign-out (9 steps).
+- **`scripts/e2e-all.mjs`** (`npm run e2e`) — all four E2E suites sequentially with a rate-limit cooldown; total summary, non-zero exit on failure.
+- **`npm run e2e`** requires the dev server running locally (`npm start`) — the suites use real HTTP.
 - **`npm run auth:schema`** — regenerates + applies BetterAuth DDL from
   `auth.options`; SQL reference in `docs/schema/better-auth-schema.sql`.
+- **`npm run migration:run`** — applies TypeORM domain migrations (first: `audit_log`).
+
+## Cookie contract for client teams
+
+- Session cookie: `better-auth.session_token` — **httpOnly, SameSite=Lax**,
+  `Secure` in production, 7-day sliding expiry (FR-6). BetterAuth owns its
+  format (`<token>.<hmac>`); treat it as opaque and never persist it.
+- Send the cookie verbatim for every authenticated call; the frontend needs
+  `credentials: 'include'` with CORS origins listed in `CORS_ORIGIN_URLS`.
+- Cross-site POSTs must send a real `Origin` under those allowed origins or
+  BetterAuth answers `403 MISSING_OR_NULL_ORIGIN` (CSRF defense).
+- `get-session` returns `{user:{id,name,email,emailVerified,role,image}, session}`
+  or literal `null` — never error bodies.
+
+## Curl cheat sheet
+
+```bash
+BASE=http://localhost:3000
+ORIGIN=http://localhost:5173   # must be in CORS_ORIGIN_URLS
+
+curl -s $BASE/health
+curl -s -X POST $BASE/api/auth/sign-up/email -H "content-type: application/json" -H "origin: $ORIGIN" \
+  -d '{"name":"A","email":"a@example.com","password":"strongpass123"}'
+# → verification link lands in your inbox (or .mail-capture.jsonl in dev)
+
+curl -s -X POST $BASE/api/auth/request-password-reset -H "content-type: application/json" -H "origin: $ORIGIN" \
+  -d '{"email":"a@example.com"}'
+
+curl -s -X POST $BASE/api/auth/reset-password -H "content-type: application/json" -H "origin: $ORIGIN" \
+  -d '{"newPassword":"newstrongpass123","token":"<token-from-mail>"}'
+
+curl -s -c cookies.txt -X POST $BASE/api/auth/sign-in/email -H "content-type: application/json" -H "origin: $ORIGIN" \
+  -d '{"email":"a@example.com","password":"strongpass123"}'
+curl -s -b cookies.txt $BASE/api/auth/get-session
+curl -s -b cookies.txt $BASE/admin/stats
+curl -s -b cookies.txt -c cookies.txt -X POST $BASE/api/auth/sign-out -H "origin: $ORIGIN" -d '{}'
+
+curl -s -X POST $BASE/api/auth/sign-in/social -H "content-type: application/json" -H "origin: $ORIGIN" \
+  -d '{"provider":"google"}'          # → Location: real provider authorize URL + state cookie
+```
 
 ## Module map
 
