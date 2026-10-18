@@ -5,6 +5,7 @@ import { AppConfigModule } from './config/app-config.module';
 import { envValidationSchema } from './config/env.validation';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { HealthModule } from './modules/health/health.module';
       validationOptions: { abortEarly: false, allowUnknown: true },
     }),
     AppConfigModule,
+    MailModule,
     AuthModule,
     HealthModule,
   ],

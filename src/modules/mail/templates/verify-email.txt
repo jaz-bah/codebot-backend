@@ -1,0 +1,8 @@
+Hi {{NAME}},
+
+Welcome! Please confirm this email address belongs to you by opening the link below:
+
+{{VERIFY_URL}}
+
+This link expires in 1 hour and can be used only once.
+If you didn't create an account, ignore this email.
