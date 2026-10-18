@@ -3,6 +3,7 @@ import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { AppConfig } from '../../config/configuration';
 import { createKyselyPool } from '../../database/kysely/pool';
 import { MailService } from '../mail/mail.service';
+import { buildSocialProviders } from './social-providers';
 
 export interface BetterAuthDeps {
   config: AppConfig;
@@ -16,7 +17,7 @@ export interface BetterAuthDeps {
  *   (PRD decision D1). The community TypeORM adapter is deliberately not used.
  * - `role` is a server-only additional field (input: false — PRD FR-5).
  * - Mail callbacks live in MailService (FR-9: failures never break auth).
- * - Social providers are switched on in Phase 2.
+ * - Social providers (FR-3): registered conditionally from env creds.
  */
 export function buildAuth({ config, mail }: BetterAuthDeps) {
   const db = createKyselyPool(config.databaseUrl);
@@ -59,6 +60,8 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
         },
       },
     },
+
+    socialProviders: buildSocialProviders(config.oauth),
 
     account: {
       accountLinking: {

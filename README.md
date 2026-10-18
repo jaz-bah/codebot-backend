@@ -28,10 +28,27 @@ node scripts/e2e-phase1.mjs   # full auth-flow E2E (server must be running)
 | `/api/auth/forget-password` | POST | Sends reset mail (Phase 3 activates its UI path). |
 | `/api/auth/reset-password` | POST | Consumes reset token. |
 | `/api/auth/sign-out` | POST | Revokes the session identified by the request cookie (other sessions stay). |
+| `/api/auth/sign-in/social` | POST | `{provider:'google'|'github'}` → authorizes at the real provider (302 + `{url,redirect:true}`). State cookie set automatically. |
+| `/api/auth/callback/google` · `/api/auth/callback/github` | GET | Provider redirects back here with `?code` — handled internally by BetterAuth. |
 | `/api/auth/error` | GET | Error redirect target. |
 
 CSRF: mutating endpoints require a same-origin request or an `Origin` listed in
 `CORS_ORIGIN_URLS` (see `.env.example`).
+
+### OAuth setup (Phase 2)
+
+Registered in `Google Cloud Console`/`GitHub Developer settings` as follows:
+
+| Provider | Authorized redirect URI | Credentials env |
+|---|---|---|
+| Google | `${APP_URL}/api/auth/callback/google` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| GitHub | `${APP_URL}/api/auth/callback/github` | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
+
+Providers activate **pairwise conditionally** in `buildSocialProviders` —
+absent creds = email-only instance (dev-safe). Linking: enabled, but only for
+verified emails (`account.accountLinking.allowDifferentEmails = false`, FR-3).
+First-time social signups create verified users (provider asserts email
+ownership via `email_verified`).
 
 ## Dev helpers
 
