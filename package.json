@@ -9,7 +9,9 @@
     "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "db:ping": "ts-node scripts/db-ping.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d dist/database/typeorm/data-source.js",
-    "migration:gen": "typeorm-ts-node-commonjs migration:generate -d dist/database/typeorm/data-source.js"
+    "migration:gen": "typeorm-ts-node-commonjs migration:generate -d dist/database/typeorm/data-source.js",
+    "auth:schema": "ts-node scripts/generate-auth-schema.ts --apply",
+    "init:db": "npm run auth:schema"
   },
   "keywords": [
     "nestjs",
@@ -28,6 +30,7 @@
     "@nestjs/platform-express": "^10.4.22",
     "@nestjs/throttler": "^5.2.0",
     "better-auth": "^1.7.10",
+    "dotenv": "^18.0.8",
     "helmet": "^8.3.0",
     "joi": "^18.3.0",
     "kysely": "^0.29.7",

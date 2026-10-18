@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Client } from 'pg';
+import { sslFromUrl } from '../../database/ssl';
 
 export interface HealthStatus {
   ok: boolean;
@@ -19,9 +20,7 @@ export class HealthService {
     const client = new Client({
       connectionString: url,
       connectionTimeoutMillis: 2000,
-      ssl: url.includes('localhost') || url.includes('127.0.0.1')
-        ? undefined
-        : { rejectUnauthorized: false },
+      ssl: sslFromUrl(url),
     });
     try {
       await client.connect();

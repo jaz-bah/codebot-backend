@@ -8,6 +8,9 @@ import { AuthInstance } from './modules/auth/better-auth.instance';
 
 /**
  * Bootstrap the one-process server:
+ * - NestFactory.create() resolves all providers (AUTH_INSTANCE incl.) without
+ *   finalizing the Express router stack — so the BetterAuth mount below is
+ *   registered BEFORE Nest's 404 handler and everything stays reachable.
  * - BetterAuth's handler is mounted onto the Nest Express instance at
  *   /api/auth/** (PRD decision D4) so cookies stay same-domain.
  * - The auth instance is the SINGLE DI-provided AUTH_INSTANCE (AuthModule),
@@ -15,7 +18,9 @@ import { AuthInstance } from './modules/auth/better-auth.instance';
  * - CORS is an explicit origin allowlist with credentials (PRD FR-8).
  */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
 
   app.use(helmet());
 
@@ -27,10 +32,7 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  // Boot the DI container so AppConfig/AuthModule resolve (env is validated here).
-  await app.init();
-
-  // Mount BetterAuth on the same Express instance used by Nest.
+  // Mount BetterAuth BEFORE app.listen/init finalizes middleware ordering.
   const auth = app.get<AuthInstance>(AUTH_INSTANCE);
   const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.use('/api/auth', toNodeHandler(auth));

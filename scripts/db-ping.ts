@@ -1,12 +1,21 @@
 /**
  * Connectivity check for both database layers. Run with a real DATABASE_URL:
  *   npm run db:ping
+ *
+ * Note: env must be loaded BEFORE importing the data source (module-level
+ * code reads process.env.DATABASE_URL), hence dynamic imports below.
  */
-import { Client } from 'pg';
-import { createKyselyPool } from '../src/database/kysely/pool';
-import { AppDataSource } from '../src/database/typeorm/data-source';
+import { config as loadEnv } from 'dotenv';
+import { resolve } from 'path';
+
+loadEnv({ path: resolve(process.cwd(), '.env') });
 
 async function main(): Promise<void> {
+  const { Client } = await import('pg');
+  const { createKyselyPool } = await import('../src/database/kysely/pool');
+  const { sslFromUrl } = await import('../src/database/ssl');
+  const { AppDataSource } = await import('../src/database/typeorm/data-source');
+
   const url = process.env.DATABASE_URL;
   if (!url) {
     console.error('DATABASE_URL is required');
@@ -16,7 +25,7 @@ async function main(): Promise<void> {
   // Layer 1: raw pg client
   const client = new Client({
     connectionString: url,
-    ssl: url.includes('localhost') ? undefined : { rejectUnauthorized: false },
+    ssl: sslFromUrl(url) || undefined,
   });
   await client.connect();
   const raw = await client.query<{ one: number }>('select 1 as one');

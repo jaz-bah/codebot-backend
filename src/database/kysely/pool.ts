@@ -1,6 +1,6 @@
 import { Kysely, PostgresDialect } from 'kysely';
-import { Pool, PoolConfig } from 'pg';
-
+import { Pool } from 'pg';
+import { sslFromUrl } from '../ssl';
 /**
  * The BetterAuth-owned tables. BetterAuth manages this schema via the
  * Kysely adapter + @better-auth/cli — never touch these tables via TypeORM
@@ -37,16 +37,15 @@ export interface AuthSchema {
   };
 }
 
-/** Pool for the BetterAuth Kysely adapter (Neon pooled URL, SSL). */
+/** Pool for the BetterAuth Kysely adapter (Neon pooled URL, SSL-aware). */
 export function createKyselyPool(databaseUrl: string): Kysely<AuthSchema> {
-  const poolConfig: PoolConfig = {
-    connectionString: databaseUrl,
-    max: 5,
-    ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')
-      ? undefined
-      : { rejectUnauthorized: false },
-  };
   return new Kysely<AuthSchema>({
-    dialect: new PostgresDialect({ pool: new Pool(poolConfig) }),
+    dialect: new PostgresDialect({
+      pool: new Pool({
+        connectionString: databaseUrl,
+        max: 5,
+        ssl: sslFromUrl(databaseUrl) || undefined,
+      }),
+    }),
   });
 }
