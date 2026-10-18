@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { join } from 'path';
 
 /**
  * TypeORM DataSource for DOMAIN tables only (PRD decision D2).
@@ -13,8 +14,9 @@ export const AppDataSource = new DataSource({
     process.env.DATABASE_URL?.includes('127.0.0.1')
       ? undefined
       : { rejectUnauthorized: false },
-  entities: ['src/database/typeorm/entities/**/*.entity.ts'],
-  migrations: ['src/database/typeorm/migrations/*.ts'],
+  // Works both from src (ts-node) and dist (compiled) layouts.
+  entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
+  migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   synchronize: false,
   logging: false,
 });

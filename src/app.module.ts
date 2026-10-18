@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { configuration } from './config/configuration';
-import { APP_CONFIG, readAppConfig } from './config/app-config.token';
+import { AppConfigModule } from './config/app-config.module';
 import { envValidationSchema } from './config/env.validation';
+import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -12,14 +14,9 @@ import { envValidationSchema } from './config/env.validation';
       validationSchema: envValidationSchema,
       validationOptions: { abortEarly: false, allowUnknown: true },
     }),
+    AppConfigModule,
+    AuthModule,
+    HealthModule,
   ],
-  providers: [
-    {
-      provide: APP_CONFIG,
-      useFactory: (configService: ConfigService) => readAppConfig(configService),
-      inject: [ConfigService],
-    },
-  ],
-  exports: [APP_CONFIG],
 })
 export class AppModule {}

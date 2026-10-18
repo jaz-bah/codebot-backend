@@ -22,7 +22,8 @@ export function buildAuth({ config }: BetterAuthDeps) {
     database: kyselyAdapter(db, {
       type: 'postgres',
     }),
-    baseURL: config.appUrl,
+    // baseURL must include the mount path — the handler is served at /api/auth/**
+    baseURL: `${config.appUrl.replace(/\/+$/, '')}/api/auth`,
     secret: config.betterAuthSecret,
     trustedOrigins: config.corsOriginUrls,
 
