@@ -7,7 +7,7 @@ services:
     name: codebot-backend
     runtime: node
     autoDeploy: true
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: node dist/main.js
     # Nest HealthModule — returns 200 when the app is up.
     healthCheckPath: /health
