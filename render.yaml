@@ -1,0 +1,60 @@
+# Render Blueprint — deploy with "New → Blueprint" after selecting this repo.
+# A long-running Node web service (NOT serverless): the backend owns a
+# Socket.IO gateway, which requires persistent connections.
+
+services:
+  - type: web
+    name: codebot-backend
+    runtime: node
+    autoDeploy: true
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/main.js
+    # Nest HealthModule — returns 200 when the app is up.
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Public base URL of this API (BetterAuth baseURL) — set to the Render
+      # URL Render assigns (e.g. https://codebot-backend.onrender.com)
+      - key: APP_URL
+        sync: false
+      # Neon PostgreSQL pooled connection (sslmode=require)
+      - key: DATABASE_URL
+        sync: false
+      # Session/cookie/token signing key
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      # Comma-separated trusted origins — the frontend, no trailing slash
+      - key: CORS_ORIGIN_URLS
+        sync: false
+      # First-admin bootstrap (verified users with these emails are promoted)
+      - key: ADMIN_EMAIL
+        sync: false
+      # ── SMTP / Nodemailer ──────────────────────────────────────────────
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      # ── OAuth (optional) ───────────────────────────────────────────────
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      # ── Rate limiting ──────────────────────────────────────────────────
+      - key: THROTTLE_TTL_MS
+        value: "60000"
+      - key: THROTTLE_LIMIT
+        value: "100"
+      # Optional — derived from BETTER_AUTH_SECRET when unset
+      - key: SETTINGS_ENCRYPTION_KEY
+        sync: false
