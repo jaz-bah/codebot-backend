@@ -14,7 +14,7 @@ npm run migration:run  # apply TypeORM domain migrations (audit_log, …)
 npm run build          # tsc + copy mail templates into dist/
 npm start              # serve on $PORT (default 3000)
 npm run start:dev      # ts-node-dev hot reload
-npm test               # unit tests (19, jest + ts-jest)
+npm test               # unit tests (94, jest + ts-jest)
 ```
 
 ## Automated E2E suite
@@ -23,11 +23,15 @@ Four scripted HTTP suites prove the whole contract against the real app+DB
 (server must be running; dev mail capture provides verification/reset links):
 
 ```bash
-npm run e2e    # runs e2e-phase1 → phase2 → phase3 → edge (27 steps, stops on first failure)
-node scripts/e2e-phase1.mjs   # US-1 flow: signup→verify(auto-signin)→signout→signin→session→signout (9)
+npm run e2e    # runs e2e-phase1 → phase2 → phase3 → edge → todos → notes (stops on first failure)node scripts/e2e-phase1.mjs   # US-1 flow: signup→verify(auto-signin)→signout→signin→session→signout (9)
 node scripts/e2e-phase2.mjs   # OAuth wiring: authorize redirects + state cookie (4)
 node scripts/e2e-phase3.mjs   # reset flow + 401/403 guards + audit row + 429 (7)
 node scripts/e2e-edge.mjs     # unverified login rejected, resend, idempotent token, garbage token (7)
+node scripts/e2e-todos.mjs    # todos CRUD, pagination/search/sort/reorder, user isolation
+node scripts/e2e-notes.mjs    # workspace files/tree/note content/move/cascade, user isolation (19)
+node scripts/e2e-components.mjs # components CRUD/pagination/search/language-filter/verbatim-code/cascade, user isolation (17)
+node scripts/e2e-search.mjs    # unified @scope/global search across todos/presets/components/files/notes
+node scripts/e2e-profile.mjs   # profile: auto-nickname/claim/409/rotate + live domain counts
 ```
 
 `.mail-capture.jsonl` (non-production only) records every mail send
@@ -151,6 +155,41 @@ curl -s -X POST $BASE/api/auth/sign-in/social -H "content-type: application/json
 - `src/modules/auth/` — BetterAuth instance + DI module (mounted at `/api/auth/**` in `main.ts`)
 - `src/modules/mail/` — Nodemailer + templates (verify-email, reset-password)
 - `src/modules/health/` — `GET /health`
+- `src/modules/todos/` — user todo CRUD, pagination/search/sort/reorder (Phase 5)
+- `src/modules/notes/` — workspace file tree (folders + HTML note files) + rich-HTML note content (see below)
+- `src/modules/documents/` — user file library: uploaded Cloudinary bytes + persisted metadata (name/description/url) (`/documents`)
+- `src/modules/components/` — user UI-component library: name + preview + verbatim code files (`component`/`component_file`) (`/components`, see `../Brain/api-guide/components-api-guide.md`)
+- `src/modules/search/` — unified `@scope` search across todos/notes/files/documents/components/presets/experts/tools/IDE-snippets (see `../Brain/api-guide/search-api-guide.md`)
+- `src/modules/profile/` — one row per user: unique auto-generated short nickname + live counts over all domain tables (`/profile`, see `../Brain/api-guide/profile-api-guide.md`)
+
+## Notes & workspace files (`/files`, `/notes`)
+
+A per-user **workspace file tree**: `folder` rows (nested, self-referencing DB
+FK with `ON DELETE CASCADE`) and `file` rows (`*.html` note documents). Every
+`file` row has a 1:1 `note` row holding the rich HTML content (unique FK,
+cascade-deleted with the file). All routes require a session; any other user's
+row is indistinguishable from "not found" (404) — ownership is scoped server-side.
+
+| Route | Method | Notes |
+|---|---|---|
+| `GET /files/tree` | GET | Full nested tree (single query, assembled in memory; children ordered by position). |
+| `GET /files?parentId&search&type&sortBy&sortOrder&page&limit` | GET | Folder contents (omit `parentId` → root). Sort: `position`/`name`/`createdAt`/`updatedAt`. |
+| `POST /files` | POST | Create folder or file. `{name, type, parentId?, content?}`. Files must end in `.html`; sibling names are case-insensitively unique (409). Creating a file seeds its note row in the same transaction. |
+| `PATCH /files/:id` | PATCH | Rename and/or move (`{name?, parentId?}`). Rejects moves into self/descendants (400 cycles), recomputes positions, compacts the source folder. |
+| `DELETE /files/:id` | DELETE | Deletes the row; FK cascade removes nested folders/files and their notes; sibling positions compacted. |
+| `GET /notes?page&limit&search&folderId&sortBy&sortOrder` | GET | All the user's note (file) metadata + tag-stripped `preview` (≤200 chars) — never the raw content. Search matches content AND file name (ILIKE, wildcards escaped). |
+| `GET /notes/:fileId` | GET | Full note with rich-HTML `content` for file `:fileId` (400 for folder ids). |
+| `PATCH /notes/:fileId` | PATCH | `{content}` — replaces the rich HTML body (≤500 KB), DB-clock `updatedAt`. |
+
+Data model: `workspace_file` (`id, user_id, name, type 'folder'|'file',
+parent_id, position, created_at, updated_at`) + `note` (`id, file_id UNIQUE,
+user_id, content, created_at, updated_at`). Migration
+`1732000000000-CreateNotesWorkspace` (TypeORM-owned domain tables, PRD D2 —
+plain string `user_id`, no cross-ORM FKs). Sibling-name uniqueness is a
+case-insensitive expression index (`uq_workspace_file_sibling_name`).
+
+Content is stored verbatim and never executed server-side — rendering and
+sanitization are the client's responsibility.
 
 Governance docs (PRD, ARCHITECTURE, ROADMAP, TASKS, LOG, MEMORY) live in `../Brain/`.
 For "how do I actually use this" — sign-ups, resets, admin workflows, troubleshooting — see `../Brain/RUNBOOK.md`.

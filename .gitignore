@@ -1,7 +1,11 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
 *.log
+logs/
 coverage/
+*.tsbuildinfo
 .mail-capture.jsonl
-.mail-capture.jsonl
+.DS_Store

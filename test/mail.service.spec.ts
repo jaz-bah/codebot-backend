@@ -34,6 +34,7 @@ describe('MailService', () => {
       smtp: { host: '', port: 587, user: '', pass: '', from: 'backend-app <no-reply@localhost>' },
       oauth: { googleClientId: '', googleClientSecret: '', githubClientId: '', githubClientSecret: '' },
       throttle: { ttlMs: 60000, limit: 100 },
+      settings: { encryptionKey: '' },
     };
     const service = new MailService(appConfig);
     service.onModuleInit();
@@ -74,6 +75,7 @@ describe('MailService', () => {
       smtp: { host: '', port: 587, user: '', pass: '', from: '' },
       oauth: { googleClientId: '', googleClientSecret: '', githubClientId: '', githubClientSecret: '' },
       throttle: { ttlMs: 60000, limit: 100 },
+      settings: { encryptionKey: '' },
     };
     const service = new MailService(appConfig);
     service.onModuleInit();
@@ -112,6 +114,7 @@ describe('MailService', () => {
       smtp: { host: 'smtp.test', port: 587, user: '', pass: '', from: '' },
       oauth: { googleClientId: '', googleClientSecret: '', githubClientId: '', githubClientSecret: '' },
       throttle: { ttlMs: 60000, limit: 100 },
+      settings: { encryptionKey: '' },
     };
     const service = new MailService(appConfig);
     service.onModuleInit();

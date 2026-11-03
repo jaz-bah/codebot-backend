@@ -13,6 +13,19 @@ const phases = [
   ['phase 2 — OAuth wiring (google/github)', 'e2e-phase2.mjs'],
   ['phase 3 — reset + guards + rate limit', 'e2e-phase3.mjs'],
   ['phase 4 — negative/edge contract', 'e2e-edge.mjs'],
+  ['todos — CRUD/pagination/search/sort/reorder/isolation', 'e2e-todos.mjs'],
+  ['notes — workspace files/tree/notes/search/move/cascade/isolation', 'e2e-notes.mjs'],
+  ['experts — CRUD/pagination/search/sort/isolation', 'e2e-experts.mjs'],
+  ['tools — CRUD/pagination/search/sort/isolation', 'e2e-tools.mjs'],
+  ['ide-snippets — CRUD/pagination/search/filter/verbatim/isolation', 'e2e-ide-snippets.mjs'],
+  ['presets — CRUD/pagination/search/filter/sort/verbatim/isolation', 'e2e-presets.mjs'],
+  ['settings — credentials encrypted at rest/masked/isolation/reset', 'e2e-settings.mjs'],
+  ['uploads — images/zips via Cloudinary/validation/gating/413/502', 'e2e-uploads.mjs'],
+  ['components — CRUD/pagination/search/language-filter/verbatim/cascade/isolation', 'e2e-components.mjs'],
+  ['search — @scopes + global/union/data-code-match/limits/isolation', 'e2e-search.mjs'],
+  ['profile — nickname auto-gen/claim/409/rotate + live counts partitioning', 'e2e-profile.mjs'],
+  ['chat — username search/conversations/messages/pagination/read/isolation + WS', 'e2e-chat.mjs'],
+  ['posts — publish/share/votes/feed/search/sort/filter/cascade/isolation', 'e2e-posts.mjs'],
 ];
 
 const results = [];

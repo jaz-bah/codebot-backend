@@ -36,4 +36,8 @@ export const envValidationSchema = Joi.object({
   // Rate limiting (Phase 3)
   THROTTLE_TTL_MS: Joi.number().default(60000),
   THROTTLE_LIMIT: Joi.number().default(100),
+
+  // User-settings credential encryption (optional — derived from
+  // BETTER_AUTH_SECRET when unset; set an explicit key before production).
+  SETTINGS_ENCRYPTION_KEY: Joi.string().allow('').default(''),
 });

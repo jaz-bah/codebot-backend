@@ -24,6 +24,7 @@ export interface AppConfig {
   smtp: MailConfig;
   oauth: OAuthConfig;
   throttle: { ttlMs: number; limit: number };
+  settings: { encryptionKey: string };
 }
 
 /** Typed configuration factory loaded once by ConfigModule. */
@@ -59,6 +60,11 @@ export const configuration = (): AppConfig => {
     throttle: {
       ttlMs: Number(env.THROTTLE_TTL_MS ?? 60000),
       limit: Number(env.THROTTLE_LIMIT ?? 100),
+    },
+    // User-settings credential encryption. Falls back to a key derived from
+    // BETTER_AUTH_SECRET when unset (see settings-cipher.ts).
+    settings: {
+      encryptionKey: env.SETTINGS_ENCRYPTION_KEY ?? '',
     },
   };
 };

@@ -11,6 +11,20 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
+import { TodosModule } from './modules/todos/todos.module';
+import { NotesModule } from './modules/notes/notes.module';
+import { ExpertsModule } from './modules/experts/experts.module';
+import { ToolsModule } from './modules/tools/tools.module';
+import { IdeSnippetsModule } from './modules/ide-snippets/ide-snippets.module';
+import { PresetsModule } from './modules/presets/presets.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { ComponentsModule } from './modules/components/components.module';
+import { SearchModule } from './modules/search/search.module';
+import { ProfileModule } from './modules/profile/profile.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { PostsModule } from './modules/posts/posts.module';
 import { BetterAuthSessionGuard } from './common/guards/better-auth-session.guard';
 import { AdminGuard } from './common/guards/admin.guard';
 
@@ -35,6 +49,20 @@ import { AdminGuard } from './common/guards/admin.guard';
     AuthModule,
     AdminModule,
     HealthModule,
+    TodosModule,
+    NotesModule,
+    ExpertsModule,
+    ToolsModule,
+    IdeSnippetsModule,
+    PresetsModule,
+    SettingsModule,
+    UploadsModule,
+    DocumentsModule,
+    ComponentsModule,
+    SearchModule,
+    ProfileModule,
+    ChatModule,
+    PostsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

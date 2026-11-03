@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS "user" (
   "image" text NULL,
   "createdAt" timestamptz NOT NULL,
   "updatedAt" timestamptz NOT NULL,
+  "username" text NULL UNIQUE,
   "role" text NULL
 );
 
@@ -52,3 +53,18 @@ CREATE TABLE IF NOT EXISTS "verification" (
 );
 
 CREATE INDEX IF NOT EXISTS "idx_verification_identifier" ON "verification" ("identifier");
+
+-- additive evolution for deployed databases
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "image" text;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "username" text;
+CREATE UNIQUE INDEX IF NOT EXISTS "uq_user_username" ON "user" ("username");
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "role" text;
+ALTER TABLE "session" ADD COLUMN IF NOT EXISTS "ipAddress" text;
+ALTER TABLE "session" ADD COLUMN IF NOT EXISTS "userAgent" text;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "accessToken" text;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "refreshToken" text;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "idToken" text;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "accessTokenExpiresAt" timestamptz;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "refreshTokenExpiresAt" timestamptz;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "scope" text;
+ALTER TABLE "account" ADD COLUMN IF NOT EXISTS "password" text;

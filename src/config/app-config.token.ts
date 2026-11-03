@@ -21,5 +21,6 @@ export function readAppConfig(cs: ConfigService): AppConfig {
     smtp: cs.get<AppConfig['smtp']>('smtp') as AppConfig['smtp'],
     oauth: cs.get<AppConfig['oauth']>('oauth') as AppConfig['oauth'],
     throttle: cs.get<AppConfig['throttle']>('throttle') as AppConfig['throttle'],
+    settings: cs.get<AppConfig['settings']>('settings') as AppConfig['settings'],
   };
 }

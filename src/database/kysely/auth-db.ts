@@ -17,6 +17,7 @@ export interface AuthBaseDB {
     email: string;
     emailVerified: boolean;
     image: string | null;
+    username: string | null;
     createdAt: Date;
     updatedAt: Date;
   } & Record<string, unknown>;

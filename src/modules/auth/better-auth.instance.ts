@@ -1,8 +1,10 @@
 import { betterAuth } from 'better-auth';
+import { username } from 'better-auth/plugins';
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { AppConfig } from '../../config/configuration';
 import { createKyselyPool } from '../../database/kysely/pool';
 import { getAuthKysely } from '../../database/kysely/auth-db';
+import { ensureUniqueUsername } from './username-generator';
 import { MailService } from '../mail/mail.service';
 import { buildSocialProviders } from './social-providers';
 import { promoteAdminUsers, shouldPromote } from '../admin/admin-promote';
@@ -68,6 +70,16 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
       },
     },
 
+    plugins: [
+      // Unique per-user handle for the chat people-search (username column on
+      // the user table; normalized to lowercase; defaults: 3–30 chars,
+      // [a-zA-Z0-9_.]). OPTIONAL at signup — omitting it does not break the
+      // email/password flow. `displayUsername` disabled keeps the schema a
+      // single additive column (user.username) — pass the same flag to
+      // usernameClient() on the client side.
+      username({ displayUsername: false }),
+    ],
+
     socialProviders: buildSocialProviders(config.oauth),
 
     // Rate limiting (network layer, IP-ranked) — built-in special rules in
@@ -81,7 +93,36 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
 
     // US-6: promote ADMIN_EMAIL users to role=admin on login (server-side,
     // never settable via signup/payload). Fails safe — never blocks sign-in.
+    // FR-auto-username: every account also gets a unique handle at creation —
+    // unless the client supplied a username (the plugin validates that path),
+    // one is derived from email/name and made unique against the user table.
     databaseHooks: {
+      user: {
+        create: {
+          before: async (user, ctx) => {
+            try {
+              const candidate = user as {
+                email?: string | null;
+                name?: string | null;
+                username?: string | null;
+              };
+              if (candidate.username && candidate.username.trim()) return;
+              const username = await ensureUniqueUsername(getAuthKysely(config.databaseUrl), {
+                email: candidate.email ?? null,
+                name: candidate.name ?? null,
+              });
+              return { data: { ...user, username } };
+            } catch (e) {
+              // Fail-safe: signup proceeds without a handle (the profile
+              // module backfills one lazily on GET /profile).
+              ctx?.context?.logger?.error?.(
+                `username generator failed: ${e instanceof Error ? e.message : String(e)}`,
+              );
+              return undefined;
+            }
+          },
+        },
+      },
       session: {
         create: {
           after: async (session: { userId: string }, ctx) => {
