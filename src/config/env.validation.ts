@@ -8,7 +8,14 @@ export const envValidationSchema = Joi.object({
   // App
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().default(3000),
+  // Public base URL of THIS API (BetterAuth baseURL / OAuth issuer / mail links).
+  // Must stay on the backend — Google's redirect_uri is registered against it.
   APP_URL: Joi.string().uri().required(),
+  // Where users are redirected AFTER sign-in / verify / reset. Lives on the
+  // frontend (vercel.app) — separate from APP_URL, which is the backend.
+  // Without this, BetterAuth falls back to the baseURL origin and lands users
+  // on the backend domain (the "redirected to backend URL" bug).
+  FRONTEND_URL: Joi.string().uri().required(),
 
   // Database (Neon Postgres, pooled URL, SSL)
   DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }).required(),

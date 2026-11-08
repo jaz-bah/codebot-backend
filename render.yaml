@@ -18,6 +18,11 @@ services:
       # URL Render assigns (e.g. https://codebot-backend.onrender.com)
       - key: APP_URL
         sync: false
+      # Where users land after auth — the FRONTEND origin (vercel.app),
+      # NOT the backend. Without this BetterAuth redirects post-login to
+      # the backend domain.
+      - key: FRONTEND_URL
+        sync: false
       # Neon PostgreSQL pooled connection (sslmode=require)
       - key: DATABASE_URL
         sync: false

@@ -14,6 +14,7 @@ export function readAppConfig(cs: ConfigService): AppConfig {
     nodeEnv: cs.get('nodeEnv') as AppConfig['nodeEnv'],
     port: cs.get<number>('port') as number,
     appUrl: cs.get<string>('appUrl') as string,
+    frontendUrl: cs.get<string>('frontendUrl') as string,
     databaseUrl: cs.get<string>('databaseUrl') as string,
     betterAuthSecret: cs.get<string>('betterAuthSecret') as string,
     corsOriginUrls: cs.get<string[]>('corsOriginUrls') as string[],

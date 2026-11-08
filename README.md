@@ -101,6 +101,26 @@ verified emails (`account.accountLinking.allowDifferentEmails = false`, FR-3).
 First-time social signups create verified users (provider asserts email
 ownership via `email_verified`).
 
+**Post-login redirect (prod gotcha):** after the provider sends the browser
+back to `/api/auth/callback/google`, BetterAuth redirects to the
+`callbackURL` passed to `signIn.social` — and **defaults to `/` resolved
+against the `baseURL` (backend) origin** when no absolute URL is passed.
+With the frontend on a different host, a missing/relative `callbackURL`
+silently lands users on the backend domain. Always pass an **absolute** URL:
+
+```ts
+authClient.signIn.social({
+  provider: 'google',
+  callbackURL: `${FRONTEND_URL}/dashboard`,
+  newUserCallbackURL: `${FRONTEND_URL}/welcome`,
+  errorCallbackURL: `${FRONTEND_URL}/error`,
+});
+```
+
+`APP_URL` (backend) and `FRONTEND_URL` (frontend) are deliberately separate
+env vars — `APP_URL` must stay on the backend because Google's `redirect_uri`
+is registered against it.
+
 ## Dev helpers
 
 - **`scripts/e2e-all.mjs`** (`npm run e2e`) — all four E2E suites sequentially with a rate-limit cooldown; total summary, non-zero exit on failure.

@@ -17,6 +17,9 @@ export interface AppConfig {
   nodeEnv: 'development' | 'production' | 'test';
   port: number;
   appUrl: string;
+  // Where users land after auth (frontend origin). Separate from appUrl, which
+  // must stay on the backend (OAuth redirect_uri, mail links, baseURL).
+  frontendUrl: string;
   databaseUrl: string;
   betterAuthSecret: string;
   corsOriginUrls: string[];
@@ -34,6 +37,7 @@ export const configuration = (): AppConfig => {
     nodeEnv: (env.NODE_ENV as AppConfig['nodeEnv']) ?? 'development',
     port: Number(env.PORT ?? 3000),
     appUrl: env.APP_URL ?? 'http://localhost:3000',
+    frontendUrl: env.FRONTEND_URL ?? 'http://localhost:5173',
     databaseUrl: env.DATABASE_URL ?? '',
     betterAuthSecret: env.BETTER_AUTH_SECRET ?? '',
     corsOriginUrls: (env.CORS_ORIGIN_URLS ?? 'http://localhost:5173')
