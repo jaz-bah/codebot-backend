@@ -160,6 +160,14 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
         enabled: true,
         allowDifferentEmails: false, // FR-3: no linking against unverified emails
       },
+      // Cross-domain gotcha (frontend vercel.app vs backend onrender.com):
+      // BetterAuth validates OAuth state via BOTH the DB verification table
+      // AND a signed `state` cookie. The cookie check cannot work across
+      // separate origins — browsers drop the third-party cookie on the
+      // provider redirect back, so it always throws state_mismatch. Skip it;
+      // the DB check (random 32-char state string, expiry, match) is still
+      // enforced and is the authoritative validation.
+      skipStateCookieCheck: true,
     },
 
     session: {
