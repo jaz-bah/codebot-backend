@@ -23,6 +23,10 @@ async function bootstrap(): Promise<void> {
     logger: ['error', 'warn', 'log'],
   });
 
+  // Trust proxy headers from Vercel/Render. Required for correct protocol
+  // (https) and host detection when behind a load balancer or proxy.
+  app.set('trust proxy', 1);
+
   app.use(
     helmet({
       crossOriginOpenerPolicy: false,
