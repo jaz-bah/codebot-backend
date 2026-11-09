@@ -180,10 +180,7 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
       useSecureCookies: config.nodeEnv === 'production',
       cookiePrefix: 'codebot',
       defaultCookieAttributes: {
-        // Frontend (vercel.app) and backend (onrender.com) are differentSites —
-        // the session cookie only rides along on cross-site fetches when it's
-        // SameSite=None; Secure. Lax stays for dev (localhost is same-site).
-        sameSite: config.nodeEnv === 'production' ? ('none' as const) : ('lax' as const),
+        sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
         httpOnly: true,
         secure: config.nodeEnv === 'production',
         path: '/',
