@@ -25,7 +25,8 @@ async function bootstrap(): Promise<void> {
 
   // Trust proxy headers from Vercel/Render. Required for correct protocol
   // (https) and host detection when behind a load balancer or proxy.
-  app.set('trust proxy', 1);
+  const expressInstance = app.getHttpAdapter().getInstance();
+  expressInstance.set('trust proxy', 1);
 
   app.use(
     helmet({
@@ -44,7 +45,6 @@ async function bootstrap(): Promise<void> {
 
   // Mount BetterAuth BEFORE app.listen/init finalizes middleware ordering.
   const auth = app.get<AuthInstance>(AUTH_INSTANCE);
-  const expressInstance = app.getHttpAdapter().getInstance();
   expressInstance.use('/api/auth', toNodeHandler(auth));
 
   app.useGlobalFilters(new HttpExceptionFilter());
