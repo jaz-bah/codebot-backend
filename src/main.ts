@@ -30,6 +30,11 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  // All browser traffic arrives through the frontend's proxy (server.mjs,
+  // xfwd) and/or Render's edge — trust the forwarded chain so req.ip (Nest
+  // throttler buckets) resolves to the real client instead of the proxy IP.
+  app.getHttpAdapter().getInstance().set('trust proxy', true);
+
   app.enableCors({
     origin: (process.env.CORS_ORIGIN_URLS ?? 'http://localhost:5173')
       .split(',')

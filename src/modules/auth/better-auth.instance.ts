@@ -31,9 +31,35 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
       type: 'postgres',
     }),
     // baseURL must include the mount path — the handler is served at /api/auth/**
-    baseURL: `${config.appUrl.replace(/\/+$/, '')}/api/auth`,
+    // Auth is exposed to the browser THROUGH the frontend origin (the frontend's
+    // server.mjs proxies /api/** + /socket.io/** to this backend), so baseURL is
+    // the FRONTEND origin: OAuth redirect_uri = `${FRONTEND_URL}/api/auth/
+    // callback/google` (registered in the Google console), the state/session
+    // cookies are set via the proxied SAME-ORIGIN response (first-party — they
+    // survive third-party-cookie blocking, unlike direct cross-origin calls to
+    // this backend), and mail links (verify-email / reset-password) land on the
+    // user-facing domain. This handler is still mounted at /api/auth/** here, so
+    // direct backend calls keep working.
+    baseURL: `${config.frontendUrl.replace(/\/+$/, '')}/api/auth`,
     secret: config.betterAuthSecret,
     trustedOrigins: config.corsOriginUrls,
+
+    // Requests arrive through two proxies (Render edge + the frontend's
+    // http-proxy, which sets x-forwarded-for via xfwd). Without this, BetterAuth
+    // can't resolve a client IP and rate-limits everyone as one shared bucket.
+    advanced: {
+      ipAddress: {
+        ipAddressHeaders: ['x-forwarded-for'],
+      },
+    },
+
+    // Without this, OAuth failures (state_mismatch / state_not_found) 302 to
+    // `/?error=…` on THIS backend origin — a dead end for the user. Route them
+    // to the frontend sign-in page, which already maps `?error=` to a human
+    // message.
+    onAPIError: {
+      errorURL: `${config.frontendUrl}/auth/sign-in`,
+    },
 
     emailAndPassword: {
       enabled: true,

@@ -14,13 +14,16 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Public base URL of this API (BetterAuth baseURL) — set to the Render
-      # URL Render assigns (e.g. https://codebot-backend.onrender.com)
+      # Legacy public URL of this API. No longer drives BetterAuth (baseURL
+      # now comes from FRONTEND_URL — see better-auth.instance.ts) but still
+      # required by env validation.
       - key: APP_URL
         sync: false
-      # Where users land after auth — the FRONTEND origin (vercel.app),
-      # NOT the backend. Without this BetterAuth redirects post-login to
-      # the backend domain.
+      # The FRONTEND origin (https://codebotapp.onrender.com). This is where
+      # users land after auth AND the public auth base: BetterAuth baseURL =
+      # `${FRONTEND_URL}/api/auth`, so the OAuth redirect_uri is the FRONTEND
+      # callback (`${FRONTEND_URL}/api/auth/callback/google`) and OAuth state/
+      # session cookies are set same-origin via the frontend's proxy.
       - key: FRONTEND_URL
         sync: false
       # Neon PostgreSQL pooled connection (sslmode=require)
