@@ -23,7 +23,12 @@ async function bootstrap(): Promise<void> {
     logger: ['error', 'warn', 'log'],
   });
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginOpenerPolicy: false,
+      crossOriginResourcePolicy: false,
+    }),
+  );
 
   app.enableCors({
     origin: (process.env.CORS_ORIGIN_URLS ?? 'http://localhost:5173')

@@ -34,6 +34,7 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
     baseURL: `${config.appUrl.replace(/\/+$/, '')}/api/auth`,
     secret: config.betterAuthSecret,
     trustedOrigins: config.corsOriginUrls,
+    cookiePrefix: 'codebot',
 
     emailAndPassword: {
       enabled: true,
@@ -177,6 +178,7 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
 
     advanced: {
       useSecureCookies: config.nodeEnv === 'production',
+      cookiePrefix: 'codebot',
       defaultCookieAttributes: {
         // Frontend (vercel.app) and backend (onrender.com) are differentSites —
         // the session cookie only rides along on cross-site fetches when it's
