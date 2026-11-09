@@ -34,7 +34,6 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
     baseURL: `${config.appUrl.replace(/\/+$/, '')}/api/auth`,
     secret: config.betterAuthSecret,
     trustedOrigins: config.corsOriginUrls,
-    cookiePrefix: 'codebot',
 
     emailAndPassword: {
       enabled: true,
@@ -161,30 +160,11 @@ export function buildAuth({ config, mail }: BetterAuthDeps) {
         enabled: true,
         allowDifferentEmails: false, // FR-3: no linking against unverified emails
       },
-      // Cross-domain gotcha (frontend vercel.app vs backend onrender.com):
-      // BetterAuth validates OAuth state via BOTH the DB verification table
-      // AND a signed `state` cookie. The cookie check cannot work across
-      // separate origins — browsers drop the third-party cookie on the
-      // provider redirect back, so it always throws state_mismatch. Skip it;
-      // the DB check (random 32-char state string, expiry, match) is still
-      // enforced and is the authoritative validation.
-      skipStateCookieCheck: true,
     },
 
     session: {
       expiresIn: 60 * 60 * 24 * 7, // 7 days, sliding refresh (FR-6)
       cookieCache: { enabled: false },
-    },
-
-    advanced: {
-      useSecureCookies: config.nodeEnv === 'production',
-      cookiePrefix: 'codebot',
-      defaultCookieAttributes: {
-        sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
-        httpOnly: true,
-        secure: config.nodeEnv === 'production',
-        path: '/',
-      },
     },
 
     logger: {
