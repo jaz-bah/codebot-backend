@@ -12,6 +12,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './modules/health/health.module';
 import { MailModule } from './modules/mail/mail.module';
 import { TodosModule } from './modules/todos/todos.module';
+import { ArtboardsModule } from './modules/artboards/artboards.module';
 import { NotesModule } from './modules/notes/notes.module';
 import { ExpertsModule } from './modules/experts/experts.module';
 import { ToolsModule } from './modules/tools/tools.module';
@@ -50,6 +51,7 @@ import { AdminGuard } from './common/guards/admin.guard';
     AdminModule,
     HealthModule,
     TodosModule,
+    ArtboardsModule,
     NotesModule,
     ExpertsModule,
     ToolsModule,
