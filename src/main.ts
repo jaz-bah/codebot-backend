@@ -5,6 +5,9 @@ import { toNodeHandler } from 'better-auth/node';
 import { AppModule } from './app.module';
 import { AUTH_INSTANCE } from './modules/auth/auth.module';
 import { AuthInstance } from './modules/auth/better-auth.instance';
+import { createSocialOAuthStartHandler } from './modules/auth/social-start.handler';
+import { APP_CONFIG } from './config/app-config.token';
+import { AppConfig } from './config/configuration';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 /**
@@ -43,9 +46,18 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  // Mount BetterAuth BEFORE app.listen/init finalizes middleware ordering.
+  // Mount social OAuth start bridge BEFORE the BetterAuth mount so it wins
+  // the /api/auth path match (see social-start.handler.ts for WHY a GET
+  // navigation bridge exists at all — Cloudflare challenge on the XHR start).
   const expressInstance = app.getHttpAdapter().getInstance();
   const auth = app.get<AuthInstance>(AUTH_INSTANCE);
+  const appConfig = app.get<AppConfig>(APP_CONFIG);
+  expressInstance.get(
+    '/api/auth/sign-in/social/start',
+    createSocialOAuthStartHandler({ auth, config: appConfig }),
+  );
+
+  // Mount BetterAuth BEFORE app.listen/init finalizes middleware ordering.
   expressInstance.use('/api/auth', toNodeHandler(auth));
 
   app.useGlobalFilters(new HttpExceptionFilter());

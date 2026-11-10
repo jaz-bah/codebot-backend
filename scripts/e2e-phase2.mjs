@@ -6,11 +6,15 @@
  *  2. configured provider → /api/auth/sign-in/social redirects 302 to the
  *     real provider authorize endpoint and sets the BetterAuth state cookie
  *  3. session shape unchanged: get-session without cookie → null
+ *  4. GET start bridge (/api/auth/sign-in/social/start — the challenge-proof
+ *     document-navigation entrypoint) also 302s to the provider with the
+ *     state cookie
  *
  * The full callback flow (provider login → user/account rows) requires a
  * real browser session — flagged as MANUAL items in Brain/TASKS.md.
  */
 import 'dotenv/config';
+import http from 'node:http';
 
 const BASE = `http://localhost:${process.env.PORT || 3000}`;
 const ORIGIN = (process.env.CORS_ORIGIN_URLS ?? 'http://localhost:5173').split(',')[0].trim();
@@ -82,6 +86,36 @@ async function main() {
     socialRedirect('google', 'https://accounts.google.com/o/oauth2/'));
   await step('github → authorize redirect + state cookie', () =>
     socialRedirect('github', 'https://github.com/login/oauth/authorize'));
+
+  // Node fetch treats a 302 with redirect:'manual' as an opaque response (no
+  // headers exposed), so the bridge is exercised over raw http for precision.
+  const bridgeRedirect = async (provider, targetPrefix) => {
+    const url = new URL(`${BASE}/api/auth/sign-in/social/start`);
+    url.searchParams.set('provider', provider);
+    url.searchParams.set('callbackURL', `${ORIGIN}/dashboard`);
+    const outcome = await new Promise((resolve, reject) => {
+      const req = http.get(url, { headers: { accept: 'text/html' } }, (res) => {
+        const status = res.statusCode;
+        const location = res.headers.location ?? null;
+        const setCookie = (res.headers['set-cookie'] ?? []).join('|');
+        res.resume();
+        res.on('end', () => resolve({ status, location, setCookie }));
+      });
+      req.on('error', reject);
+    });
+    if (outcome.status !== 302 || !String(outcome.location ?? '').startsWith(targetPrefix)) {
+      throw new Error(`expected 302 → provider, got ${outcome.status} → ${String(outcome.location).slice(0, 120)}`);
+    }
+    if (!outcome.setCookie.includes('better-auth.state')) {
+      throw new Error('no better-auth state cookie set by bridge');
+    }
+    return `302 → ${String(outcome.location).slice(0, 60)}… with state cookie`;
+  };
+
+  await step('start bridge: google → authorize redirect + state cookie', () =>
+    bridgeRedirect('google', 'https://accounts.google.com/o/oauth2/'));
+  await step('start bridge: github → authorize redirect + state cookie', () =>
+    bridgeRedirect('github', 'https://github.com/login/oauth/authorize'));
 
   printSummary();
 }
