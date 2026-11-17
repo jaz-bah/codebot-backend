@@ -263,6 +263,26 @@ describe('PostsService — findOne', () => {
     const ds = new FakeDS([]);
     await expect(makeService(ds).findOne('post-1', null)).rejects.toMatchObject({ status: 404 });
   });
+
+  it('carries the component preview for component posts (public feed visibility)', async () => {
+    const ds = new FakeDS([]);
+    ds.queryQueue = [
+      [{ ...VIEW_ROW, resourceType: 'component', componentPreview: 'https://cdn/x.png' }],
+    ];
+    const view = await makeService(ds).findOne('post-1', null);
+
+    expect(view.preview).toBe('https://cdn/x.png');
+    // The preview comes from the component join — not a viewer-scoped read.
+    expect(ds.queryCalls[0].sql).toContain("LEFT JOIN component c ON c.id = p.resource_id AND p.resource_type = 'component'");
+    expect(ds.queryCalls[0].sql).toContain('"componentPreview"');
+  });
+
+  it('null preview for every non-component kind', async () => {
+    const ds = new FakeDS([]);
+    ds.queryQueue = [[VIEW_ROW]];
+    const view = await makeService(ds).findOne('post-1', null);
+    expect(view.preview).toBeNull();
+  });
 });
 
 describe('PostsService — create (publish owned resource)', () => {

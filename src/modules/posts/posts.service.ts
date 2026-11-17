@@ -43,6 +43,10 @@ export interface PostView {
   resourceId: string;
   title: string;
   description: string | null;
+  /** Preview image URL of the shared component — null for every other kind.
+   *  The feed renders it directly: component reads stay owner-scoped, so the
+   *  public post view is the only way other viewers can see the preview. */
+  preview: string | null;
   createdAt: Date;
   updatedAt: Date;
   author: PostAuthor;
@@ -102,11 +106,17 @@ const pgErrorCode = (error: unknown): string | undefined => {
 const VIEW_COLUMNS = [
   'p.id, p.user_id AS "userId", p.resource_type AS "resourceType", p.resource_id AS "resourceId",',
   'p.title, p.description, p.created_at AS "createdAt", p.updated_at AS "updatedAt",',
+  // Component posts carry their preview in the view itself — component reads
+  // are owner-scoped, so the feed cannot fetch it per viewer.
+  "CASE WHEN p.resource_type = 'component' THEN c.preview ELSE NULL END AS \"componentPreview\",",
   'u.username AS "authorUsername", u.name AS "authorName", u.image AS "authorImage",',
   '(SELECT COUNT(*)::int FROM post_vote v WHERE v.post_id = p.id) AS "voteCount"',
 ].join('\n');
 
-const FROM_JOIN = 'FROM post p\nLEFT JOIN "user" u ON u.id = p.user_id';
+const FROM_JOIN =
+  'FROM post p\n' +
+  'LEFT JOIN "user" u ON u.id = p.user_id\n' +
+  "LEFT JOIN component c ON c.id = p.resource_id AND p.resource_type = 'component'";
 
 /** Raw column shape of one post-view row. */
 interface PostRow {
@@ -116,6 +126,7 @@ interface PostRow {
   resourceId: string;
   title: string;
   description: string | null;
+  componentPreview: string | null;
   createdAt: Date;
   updatedAt: Date;
   authorUsername: string | null;
@@ -132,6 +143,7 @@ const toView = (row: PostRow): PostView => ({
   resourceId: row.resourceId,
   title: row.title,
   description: row.description,
+  preview: row.componentPreview ?? null,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
   author: {
