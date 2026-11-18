@@ -8,14 +8,24 @@ const validate = (schema: { validate: (v: unknown, o?: object) => { error?: any;
   schema.validate(value, { abortEarly: false, allowUnknown: false, stripUnknown: true, convert: true });
 
 describe('createIdeSnippetSchema', () => {
-  it('trims language but leaves data byte-exact (no trim)', () => {
+  it('trims language and fileName but leaves data byte-exact (no trim)', () => {
     const { error, value } = validate(createIdeSnippetSchema, {
-      language: '  css  ',
+      language: '  json  ',
+      fileName: '  en.default.json  ',
       data: '.css {\n  align: center;\n}\n  ',
     });
     expect(error).toBeUndefined();
-    expect(value.language).toBe('css');
+    expect(value.language).toBe('json');
+    expect(value.fileName).toBe('en.default.json');
     expect(value.data).toBe('.css {\n  align: center;\n}\n  '); // whitespace preserved
+  });
+
+  it('defaults fileName to null when omitted or empty', () => {
+    const { value } = validate(createIdeSnippetSchema, { language: 'json', data: 'x' });
+    expect(value.fileName).toBeNull();
+    const emptied = validate(createIdeSnippetSchema, { language: 'json', fileName: '', data: 'x' });
+    expect(emptied.error).toBeUndefined();
+    expect(emptied.value.fileName).toBeNull();
   });
 
   it('preserves line breaks, tabs and special characters in data', () => {
@@ -36,12 +46,16 @@ describe('createIdeSnippetSchema', () => {
     expect(validate(createIdeSnippetSchema, { language: ' ', data: 'x' }).error).toBeDefined();
   });
 
-  it('rejects oversized data/language and strips unknown keys', () => {
+  it('rejects oversized data/language/fileName and strips unknown keys', () => {
     expect(
       validate(createIdeSnippetSchema, { language: 'css', data: 'x'.repeat(20001) }).error,
     ).toBeDefined();
     expect(
       validate(createIdeSnippetSchema, { language: 'l'.repeat(51), data: 'x' }).error,
+    ).toBeDefined();
+    expect(
+      validate(createIdeSnippetSchema, { language: 'json', fileName: 'f'.repeat(256), data: 'x' })
+        .error,
     ).toBeDefined();
     const stripped = validate(createIdeSnippetSchema, { language: 'css', data: 'x', hacker: 'yes' });
     expect(stripped.error).toBeUndefined();
@@ -51,7 +65,7 @@ describe('createIdeSnippetSchema', () => {
 
 describe('updateIdeSnippetSchema', () => {
   it('accepts any subset of fields (no hidden defaults)', () => {
-    for (const body of [{ language: 'js' }, { data: 'a\nb' }]) {
+    for (const body of [{ language: 'js' }, { fileName: 'a.json' }, { data: 'a\nb' }]) {
       const { error, value } = validate(updateIdeSnippetSchema, body);
       expect(error).toBeUndefined();
       expect(Object.keys(value)).toContain(Object.keys(body)[0]);

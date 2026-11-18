@@ -7,10 +7,12 @@ import Joi from 'joi';
  */
 export interface UpdateIdeSnippetDto {
   language?: string;
+  fileName?: string | null;
   data?: string;
 }
 
 export const updateIdeSnippetSchema = Joi.object({
   language: Joi.string().trim().min(1).max(50).optional(),
+  fileName: Joi.string().trim().min(1).max(255).empty('').allow(null).optional(),
   data: Joi.string().min(1).max(20000).optional(),
 });

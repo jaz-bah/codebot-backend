@@ -210,6 +210,7 @@ describe('IdeSnippetsService — list (pagination + search + filter + sort)', ()
     const whereArgs = qb.wheres[1];
     expect(whereArgs[0]).toContain('s.data ILIKE');
     expect(whereArgs[0]).toContain('s.language ILIKE');
+    expect(whereArgs[0]).toContain('s.fileName ILIKE');
     expect(whereArgs[1].searchPattern).toBe('%100\\%\\_ off \\\\ now%');
     expect(whereArgs[0]).toContain("ESCAPE '\\'");
   });

@@ -17,9 +17,16 @@ export class IdeSnippet {
   @Column({ name: 'user_id', type: 'text' })
   userId!: string;
 
-  /** Snippet language hint, e.g. "css", "ts", "html". */
+  /** Snippet language hint — always "json" for new snippets. */
   @Column({ type: 'text' })
   language!: string;
+
+  /**
+   * File name shown in the workbench tree (e.g. "en.default.json"). Nullable:
+   * legacy rows (pre file-name) fall back to `language` in the UI.
+   */
+  @Column({ name: 'file_name', type: 'text', nullable: true })
+  fileName!: string | null;
 
   /**
    * The code itself. Stored as exact text — no trimming, no reformatting:

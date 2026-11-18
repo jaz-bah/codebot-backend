@@ -58,6 +58,7 @@ export class IdeSnippetsService {
       repo.create({
         userId,
         language: dto.language,
+        fileName: dto.fileName ?? null,
         // Stored verbatim — no escaping/trimming of the code payload.
         data: dto.data,
       } as never) as unknown as IdeSnippet,
@@ -76,7 +77,7 @@ export class IdeSnippetsService {
     if (query.search) {
       const pattern = `%${escapeLike(query.search)}%`;
       qb.andWhere(
-        "(s.data ILIKE :searchPattern ESCAPE '\\' OR s.language ILIKE :searchPattern ESCAPE '\\')",
+        "(s.data ILIKE :searchPattern ESCAPE '\\' OR s.language ILIKE :searchPattern ESCAPE '\\' OR s.fileName ILIKE :searchPattern ESCAPE '\\')",
         { searchPattern: pattern },
       );
     }
