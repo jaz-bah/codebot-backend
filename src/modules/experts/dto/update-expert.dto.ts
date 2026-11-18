@@ -11,5 +11,5 @@ export interface UpdateExpertDto {
 
 export const updateExpertSchema = Joi.object({
   title: Joi.string().trim().min(1).max(255).optional(),
-  description: Joi.string().trim().max(5000).empty('').allow(null).optional(),
+  description: Joi.string().trim().empty('').allow(null).optional(),
 });

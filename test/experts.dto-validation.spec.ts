@@ -31,8 +31,9 @@ describe('createExpertSchema', () => {
     expect(validate(createExpertSchema, {}).error).toBeDefined();
   });
 
-  it('rejects oversized descriptions and unknown keys', () => {
-    expect(validate(createExpertSchema, { title: 't', description: 'x'.repeat(5001) }).error).toBeDefined();
+  it('accepts long descriptions and strips unknown keys', () => {
+    // no length cap — the DB column is `text`
+    expect(validate(createExpertSchema, { title: 't', description: 'x'.repeat(5001) }).error).toBeUndefined();
     const stripped = validate(createExpertSchema, { title: 't', hacker: 'yes' });
     expect(stripped.error).toBeUndefined();
     expect((stripped.value as Record<string, unknown>).hacker).toBeUndefined();
@@ -53,7 +54,8 @@ describe('updateExpertSchema', () => {
   it('rejects invalid values', () => {
     expect(validate(updateExpertSchema, { title: '   ' }).error).toBeDefined();
     expect(validate(updateExpertSchema, { title: 'x'.repeat(256) }).error).toBeDefined();
-    expect(validate(updateExpertSchema, { description: 'x'.repeat(5001) }).error).toBeDefined();
+    // no length cap — the DB column is `text`
+    expect(validate(updateExpertSchema, { description: 'x'.repeat(5001) }).error).toBeUndefined();
   });
 });
 
