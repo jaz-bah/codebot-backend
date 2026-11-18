@@ -36,6 +36,10 @@ export const AppDataSource = new DataSource({
   // Works both from src (ts-node) and dist (compiled) layouts.
   entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
+  // Apply pending migrations on every startup (Render never runs
+  // migration:run). Safe: every migration in this folder is idempotent
+  // (`IF NOT EXISTS`), so a fresh or untracked DB converges without error.
+  migrationsRun: true,
   synchronize: false,
   logging: false,
 });
